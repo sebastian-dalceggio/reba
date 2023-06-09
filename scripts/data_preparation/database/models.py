@@ -1,4 +1,3 @@
-from typing import Any
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import (
     Column,
@@ -18,8 +17,8 @@ class IndiceAperturas(Base):
     __tablename__ = "indice_aperturas"
     id = Column(Integer, Identity(start=1, cycle=True), primary_key=True)
     date = Column(Date, nullable=False)
-    region = Column(String, nullable=False)
-    category = Column(String, nullable=False)
+    region = Column(String(50), nullable=False)
+    category = Column(String(100), nullable=False)
     value = Column(Float, nullable=False)
     __table_args__ = (
         UniqueConstraint(date, region, category, name="one_value_per_datetime_per_region_per_category"),

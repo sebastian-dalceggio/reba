@@ -1,8 +1,6 @@
-airflow_image
 dags
 data_analysis
-logs
+docker_images
+log
 plugins
-docker-compose.yaml
-.env
 **/*.pyc
