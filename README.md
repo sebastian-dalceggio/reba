@@ -2,6 +2,8 @@
 
 Este proyecto procesa un excel con datos de la inflación acumulada desde 2016, descargándolo de la web del Indec y cargando los datos transformados en una base de datos.
 
+### Justificación
+
 Para orquestrar todo el proceso utilicé Airflow. Hay un único dag compuesto por cuatro tareas:
 
 1. upgrade_tables: usando alembic se actualiza el modelo de la tabla en la base de datos
@@ -32,7 +34,7 @@ Para correr crear y correr el stored procedure hay que entrar al contenedor del 
 1. /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password123! -i query.sql
 2. /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password123! -Q "USE ipc_database; EXECUTE interanual @Region='GBA'"
 
-Instrucciones:
+### Instrucciones
 
 en ./terraform
 

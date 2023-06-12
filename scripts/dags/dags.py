@@ -1,15 +1,14 @@
 from airflow.decorators import dag
 import pendulum
 from tasks import upgrade_tables, extract, transform, load
-from config import DATABASE_STRING, GCP_PROJECT, URL_FILE, FILE_NAME_XLS, FILE_NAME_CSV, BUCKET_NAME, MONTH, YEAR, SHEET_NAME, DATABASE_TYPE, DATABASE_NAME, DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_DRIVER
+from config import DATABASE_STRING, URL_FILE, FILE_NAME_XLS, FILE_NAME_CSV, BUCKET_NAME, MONTH, YEAR, SHEET_NAME, DATABASE_TYPE, DATABASE_NAME, DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_DRIVER
 
 @dag(
     schedule=None,
     start_date=pendulum.datetime(2023, 6, 1, 1, 0, 0, tz="America/Argentina/Buenos_Aires"),
-    catchup=True,
     max_active_runs=1,
 )
-def etl(database_string, url, bucket_name, month, year, file_name_xls, project, file_name_csv, sheet_name, database_type, database_name, database_host, database_user, database_password, database_driver):
+def etl(database_string, url, bucket_name, month, year, file_name_xls, file_name_csv, sheet_name, database_type, database_name, database_host, database_user, database_password, database_driver):
     """
     Extract, transform and load inflation data into a database.
 
@@ -27,8 +26,6 @@ def etl(database_string, url, bucket_name, month, year, file_name_xls, project, 
         ipc data year, it is used to create a folder in the bucket
     file_name_xls : string
         file name of the Excel file
-    project : string
-        gpc project
     file_name_csv : string
         file name of the csv file
     sheet_name: string
@@ -48,11 +45,11 @@ def etl(database_string, url, bucket_name, month, year, file_name_xls, project, 
     """
     upgrade_tables_r = upgrade_tables(database_string)
 
-    upload_r = extract(url, bucket_name, month, year, file_name_xls, project)
+    upload_r = extract(url, bucket_name, month, year, file_name_xls)
 
-    transform_r = transform(bucket_name, month, year, file_name_xls, file_name_csv, project, sheet_name)
+    transform_r = transform(bucket_name, month, year, file_name_xls, file_name_csv, sheet_name)
     
-    load_r = load(bucket_name, month, year, file_name_csv, project, database_type, database_name, database_host, database_user, database_password, database_driver)
+    load_r = load(bucket_name, month, year, file_name_csv, database_type, database_name, database_host, database_user, database_password, database_driver)
     
     upgrade_tables_r >> upload_r >> transform_r >> load_r
 
@@ -67,10 +64,9 @@ url = URL_FILE
 file_name_xls = FILE_NAME_XLS
 file_name_csv = FILE_NAME_CSV
 bucket_name = BUCKET_NAME
-project = GCP_PROJECT
 month = MONTH
 year = YEAR
 sheet_name = SHEET_NAME
 
 
-etl(database_string, url, bucket_name, month, year, file_name_xls, project, file_name_csv, sheet_name, database_type, database_name, database_host, database_user, database_password, database_driver)
+etl(database_string, url, bucket_name, month, year, file_name_xls, file_name_csv, sheet_name, database_type, database_name, database_host, database_user, database_password, database_driver)

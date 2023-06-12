@@ -1,8 +1,7 @@
 from google.cloud import storage
 from data_preparation.logger import get_logger
-import os
 
-def upload_to_gcp(bucket_name, month, year, file_name, project):
+def upload_to_gcp(bucket_name, month, year, file_name):
     """
     It takes a file with the name file_name from the tmp directory and uploads it to gcp storage.
 
@@ -16,11 +15,9 @@ def upload_to_gcp(bucket_name, month, year, file_name, project):
         ipc data year
     file_name : string
         file name of the file
-    project : string
-        gpc project
     """
     logger = get_logger(upload_to_gcp.__name__)
-    os.environ["GCLOUD_PROJECT"] = project
+
     try:
         client = storage.Client()
         bucket = client.get_bucket(bucket_name)

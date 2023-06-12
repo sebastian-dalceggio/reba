@@ -1,6 +1,6 @@
 from airflow.decorators import task
 from docker.types import Mount
-from config import DATA_PREPARATION_DOCKER_IMAGE, PROJECT_DIR
+from config import DATA_PREPARATION_DOCKER_IMAGE, PROJECT_DIR, GCP_PROJECT
 
 @task.docker(
     image=DATA_PREPARATION_DOCKER_IMAGE,
@@ -37,6 +37,10 @@ def upgrade_tables(database_string):
 @task.docker(
     image=DATA_PREPARATION_DOCKER_IMAGE,
     network_mode="airflow-nt",
+    private_environment={
+        "GOOGLE_APPLICATION_CREDENTIALS": "/key_file/key_file.json",
+        "GCLOUD_PROJECT": GCP_PROJECT
+    },
     mounts=[
         Mount(
             source=f"{PROJECT_DIR}/../key_file",
@@ -50,7 +54,7 @@ def upgrade_tables(database_string):
         ),
     ],
 )
-def extract(url, bucket_name, month, year, file_name_xls, project):
+def extract(url, bucket_name, month, year, file_name_xls):
     """
     It downloads a file from the url, saves it in tmp folder and then uploads it to gcp storage.
 
@@ -66,22 +70,21 @@ def extract(url, bucket_name, month, year, file_name_xls, project):
         ipc data year, it is used to create a folder in the bucket
     file_name : string
         file name of the file
-    project : string
-        gpc project
     """
     
-    import os
     from data_preparation.process_data.getters import download
     from data_preparation.process_data.loaders import upload_to_gcp
 
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/key_file/key_file.json"
-
     download(url, file_name_xls)
-    upload_to_gcp(bucket_name, month, year, file_name_xls, project)
+    upload_to_gcp(bucket_name, month, year, file_name_xls)
 
 @task.docker(
     image=DATA_PREPARATION_DOCKER_IMAGE,
     network_mode="airflow-nt",
+    private_environment={
+        "GOOGLE_APPLICATION_CREDENTIALS": "/key_file/key_file.json",
+        "GCLOUD_PROJECT": GCP_PROJECT
+    },
     mounts=[
         Mount(
             source=f"{PROJECT_DIR}/../key_file",
@@ -95,7 +98,7 @@ def extract(url, bucket_name, month, year, file_name_xls, project):
         ),
     ],
 )
-def transform(bucket_name, month, year, file_name_xls, file_name_csv, project, sheet_name):
+def transform(bucket_name, month, year, file_name_xls, file_name_csv, sheet_name):
     """
     It downloads an Excel file from the bucket in the folder year/month, saves it in tmp/"file_name_xls", transforms it, saves the
     transformed dataframe in tmp/"file_name_csv" and then uploads it to gcp storage.
@@ -112,28 +115,27 @@ def transform(bucket_name, month, year, file_name_xls, file_name_csv, project, s
         file name of the Excel file
     file_name_csv : string
         file name of the csv file
-    project : string
-        gpc project
     sheet_name: string
         name of the Excel sheet
     """   
-    import os
     from data_preparation.process_data.getters import download_from_gcp
     from data_preparation.process_data.loaders import upload_to_gcp
     from data_preparation.process_data.transformers import transform, fill_nan, test_dataset
-    
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/key_file/key_file.json"
 
-    download_from_gcp(bucket_name, month, year, file_name_xls, project)
+    download_from_gcp(bucket_name, month, year, file_name_xls)
     df = transform(file_name_xls, sheet_name)
     df = fill_nan(df)
     test_dataset(df)
     df.to_csv("tmp/" + file_name_csv)
-    upload_to_gcp(bucket_name, month, year, file_name_csv, project)
+    upload_to_gcp(bucket_name, month, year, file_name_csv)
 
 @task.docker(
     image=DATA_PREPARATION_DOCKER_IMAGE,
     network_mode="airflow-nt",
+    private_environment={
+        "GOOGLE_APPLICATION_CREDENTIALS": "/key_file/key_file.json",
+        "GCLOUD_PROJECT": GCP_PROJECT
+    },
     mounts=[
         Mount(
             source=f"{PROJECT_DIR}/../key_file",
@@ -147,7 +149,7 @@ def transform(bucket_name, month, year, file_name_xls, file_name_csv, project, s
         ),
     ],
 )
-def load(bucket_name, month, year, file_name_csv, project, database_type, database_name, database_host, database_user, database_password, database_driver):
+def load(bucket_name, month, year, file_name_csv, database_type, database_name, database_host, database_user, database_password, database_driver):
     """
     It downloads an csv file from the bucket in the folder year/month, saves it in tmp/"file_name_csv" and loads it to
     the database.
@@ -162,8 +164,6 @@ def load(bucket_name, month, year, file_name_csv, project, database_type, databa
         ipc data year, it is used to create a folder in the bucket
     file_name_csv : string
         file name of the csv file
-    project : string
-        gpc project
     database_type : string
         database : type
     database_name: string
@@ -177,7 +177,6 @@ def load(bucket_name, month, year, file_name_csv, project, database_type, databa
     database_driver : string
         database driver
     """
-    import os
     import pandas as pd
     from data_preparation.process_data.getters import download_from_gcp
     from data_preparation.process_data.loaders import load_to_database
@@ -187,7 +186,6 @@ def load(bucket_name, month, year, file_name_csv, project, database_type, databa
     client = ComplexClient(database_type, database_name, database_host, database_user, database_password, database_driver)
     table_model = IndiceAperturas
 
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/key_file/key_file.json"
-    download_from_gcp(bucket_name, month, year, file_name_csv, project)
+    download_from_gcp(bucket_name, month, year, file_name_csv)
     df = pd.read_csv("tmp/" + file_name_csv)
     load_to_database(df, table_model, client, index=False)

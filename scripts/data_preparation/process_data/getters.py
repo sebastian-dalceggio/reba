@@ -1,6 +1,5 @@
 import requests
 from google.cloud import storage
-import os
 from data_preparation.logger import get_logger
 
 def download(url, file_name):
@@ -23,7 +22,7 @@ def download(url, file_name):
         logger.error(f"Exception: {e}")
         raise e
 
-def download_from_gcp(bucket_name, month, year, file_name, project):
+def download_from_gcp(bucket_name, month, year, file_name):
     """
     It downloads a file from the url passed and saves it with the name file_name.
 
@@ -37,11 +36,8 @@ def download_from_gcp(bucket_name, month, year, file_name, project):
         ipc data year, it is used to create a folder in the bucket
     file_name : string
         file name of the file
-    project : string
-        gpc project
         
     """
-    os.environ["GCLOUD_PROJECT"] = project
     logger = get_logger(download_from_gcp.__name__)
     try:
         client = storage.Client()
