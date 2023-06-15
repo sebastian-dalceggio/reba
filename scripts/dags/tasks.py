@@ -2,6 +2,7 @@ from airflow.decorators import task
 from docker.types import Mount
 from config import DATA_PREPARATION_DOCKER_IMAGE, PROJECT_DIR, GCP_PROJECT
 
+
 @task.docker(
     image=DATA_PREPARATION_DOCKER_IMAGE,
     mount_tmp_dir=False,
@@ -17,7 +18,7 @@ from config import DATA_PREPARATION_DOCKER_IMAGE, PROJECT_DIR, GCP_PROJECT
             type="bind",
         ),
     ],
-    network_mode="airflow-nt"
+    network_mode="airflow-nt",
 )
 def upgrade_tables(database_string):
     """
@@ -30,8 +31,8 @@ def upgrade_tables(database_string):
         SQLAlchemy script connection to a database
     """
     from data_preparation.migrations.run_migrations import run_migrations
+
     run_migrations(database_string)
-    
 
 
 @task.docker(
@@ -39,7 +40,7 @@ def upgrade_tables(database_string):
     network_mode="airflow-nt",
     private_environment={
         "GOOGLE_APPLICATION_CREDENTIALS": "/key_file/key_file.json",
-        "GCLOUD_PROJECT": GCP_PROJECT
+        "GCLOUD_PROJECT": GCP_PROJECT,
     },
     mounts=[
         Mount(
@@ -71,19 +72,20 @@ def extract(url, bucket_name, month, year, file_name_xls):
     file_name : string
         file name of the file
     """
-    
+
     from data_preparation.process_data.getters import download
     from data_preparation.process_data.loaders import upload_to_gcp
 
     download(url, file_name_xls)
     upload_to_gcp(bucket_name, month, year, file_name_xls)
 
+
 @task.docker(
     image=DATA_PREPARATION_DOCKER_IMAGE,
     network_mode="airflow-nt",
     private_environment={
         "GOOGLE_APPLICATION_CREDENTIALS": "/key_file/key_file.json",
-        "GCLOUD_PROJECT": GCP_PROJECT
+        "GCLOUD_PROJECT": GCP_PROJECT,
     },
     mounts=[
         Mount(
@@ -117,24 +119,31 @@ def transform(bucket_name, month, year, file_name_xls, file_name_csv, sheet_name
         file name of the csv file
     sheet_name: string
         name of the Excel sheet
-    """   
+    """
     from data_preparation.process_data.getters import download_from_gcp
     from data_preparation.process_data.loaders import upload_to_gcp
-    from data_preparation.process_data.transformers import transform, fill_nan, test_dataset
+    from data_preparation.process_data.transformers import (
+        transform,
+        fill_nan,
+        test_dataset,
+        test_source,
+    )
 
     download_from_gcp(bucket_name, month, year, file_name_xls)
+    test_source(file_name_xls, sheet_name)
     df = transform(file_name_xls, sheet_name)
     df = fill_nan(df)
     test_dataset(df)
     df.to_csv("tmp/" + file_name_csv)
     upload_to_gcp(bucket_name, month, year, file_name_csv)
 
+
 @task.docker(
     image=DATA_PREPARATION_DOCKER_IMAGE,
     network_mode="airflow-nt",
     private_environment={
         "GOOGLE_APPLICATION_CREDENTIALS": "/key_file/key_file.json",
-        "GCLOUD_PROJECT": GCP_PROJECT
+        "GCLOUD_PROJECT": GCP_PROJECT,
     },
     mounts=[
         Mount(
@@ -149,7 +158,18 @@ def transform(bucket_name, month, year, file_name_xls, file_name_csv, sheet_name
         ),
     ],
 )
-def load(bucket_name, month, year, file_name_csv, database_type, database_name, database_host, database_user, database_password, database_driver):
+def load(
+    bucket_name,
+    month,
+    year,
+    file_name_csv,
+    database_type,
+    database_name,
+    database_host,
+    database_user,
+    database_password,
+    database_driver,
+):
     """
     It downloads an csv file from the bucket in the folder year/month, saves it in tmp/"file_name_csv" and loads it to
     the database.
@@ -183,7 +203,14 @@ def load(bucket_name, month, year, file_name_csv, database_type, database_name, 
     from data_preparation.database.client import ComplexClient
     from data_preparation.database.models import IndiceAperturas
 
-    client = ComplexClient(database_type, database_name, database_host, database_user, database_password, database_driver)
+    client = ComplexClient(
+        database_type,
+        database_name,
+        database_host,
+        database_user,
+        database_password,
+        database_driver,
+    )
     table_model = IndiceAperturas
 
     download_from_gcp(bucket_name, month, year, file_name_csv)

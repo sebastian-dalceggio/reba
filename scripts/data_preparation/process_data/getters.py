@@ -2,6 +2,7 @@ import requests
 from google.cloud import storage
 from data_preparation.logger import get_logger
 
+
 def download(url, file_name):
     """
     It downloads a file from the url passed and saves it with the name file_name.
@@ -22,6 +23,7 @@ def download(url, file_name):
         logger.error(f"Exception: {e}")
         raise e
 
+
 def download_from_gcp(bucket_name, month, year, file_name):
     """
     It downloads a file from the url passed and saves it with the name file_name.
@@ -36,7 +38,7 @@ def download_from_gcp(bucket_name, month, year, file_name):
         ipc data year, it is used to create a folder in the bucket
     file_name : string
         file name of the file
-        
+
     """
     logger = get_logger(download_from_gcp.__name__)
     try:

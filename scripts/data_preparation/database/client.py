@@ -3,7 +3,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-class SqlClient():
+
+class SqlClient:
     """
     Abstract class used as a client of a database.
     This is an abstract class. For each database type there is a class that inherits this one.
@@ -37,7 +38,13 @@ class SqlClient():
     """
 
     def __init__(
-        self, database_type, database_name, host=None, user=None, password=None, driver=None
+        self,
+        database_type,
+        database_name,
+        host=None,
+        user=None,
+        password=None,
+        driver=None,
     ):
         """
         Parameters
@@ -97,7 +104,9 @@ class SqlClient():
         """
         if not self._engine:
             self._engine = self._get_engine()
-        return pd.read_sql(query, self._engine, index_col=index_col, parse_dates=parse_dates)
+        return pd.read_sql(
+            query, self._engine, index_col=index_col, parse_dates=parse_dates
+        )
 
     def insert_dataframe(self, dataframe, table_name, if_exists="fail", index=False):
         """
@@ -114,14 +123,18 @@ class SqlClient():
         """
         if not self._engine:
             self._engine = self._get_engine()
-        return dataframe.to_sql(table_name, self._engine, if_exists=if_exists, index=index)
-    
+        return dataframe.to_sql(
+            table_name, self._engine, if_exists=if_exists, index=index
+        )
+
+
 class ComplexClient(SqlClient):
     def _get_engine(self):
         db_uri = f"{self.database_type}://{self.user}:{self.password}@{self.host}/{self.database_name}{''if not self.driver else f'?driver={self.driver}'}"
         if not self._engine:
             self._engine = create_engine(db_uri)
         return self._engine
+
 
 class SqLiteClient(SqlClient):
     def _get_engine(self):

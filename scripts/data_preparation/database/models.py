@@ -1,15 +1,8 @@
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Float,
-    Identity,
-    UniqueConstraint,
-    Date
-)
+from sqlalchemy import Column, Integer, String, Float, Identity, UniqueConstraint, Date
 
 Base = declarative_base()
+
 
 class IndiceAperturas(Base):
     """indice_aperturas data model."""
@@ -21,7 +14,12 @@ class IndiceAperturas(Base):
     category = Column(String(100), nullable=False)
     value = Column(Float, nullable=False)
     __table_args__ = (
-        UniqueConstraint(date, region, category, name="one_value_per_datetime_per_region_per_category"),
+        UniqueConstraint(
+            date,
+            region,
+            category,
+            name="one_value_per_datetime_per_region_per_category",
+        ),
     )
 
     def __init__(self, id, date, region, category, value):

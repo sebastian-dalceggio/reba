@@ -4,7 +4,6 @@ from pathlib import Path
 
 
 def run_migrations(database_string):
-
     alembic_cfg = Config()
     script_location = Path(__file__).parent
     alembic_cfg.set_main_option("script_location", str(script_location))

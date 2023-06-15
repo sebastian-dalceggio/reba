@@ -1,14 +1,47 @@
 from airflow.decorators import dag
 import pendulum
 from tasks import upgrade_tables, extract, transform, load
-from config import DATABASE_STRING, URL_FILE, FILE_NAME_XLS, FILE_NAME_CSV, BUCKET_NAME, MONTH, YEAR, SHEET_NAME, DATABASE_TYPE, DATABASE_NAME, DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_DRIVER
+from config import (
+    DATABASE_STRING,
+    URL_FILE,
+    FILE_NAME_XLS,
+    FILE_NAME_CSV,
+    BUCKET_NAME,
+    MONTH,
+    YEAR,
+    SHEET_NAME,
+    DATABASE_TYPE,
+    DATABASE_NAME,
+    DATABASE_HOST,
+    DATABASE_USER,
+    DATABASE_PASSWORD,
+    DATABASE_DRIVER,
+)
+
 
 @dag(
     schedule=None,
-    start_date=pendulum.datetime(2023, 6, 1, 1, 0, 0, tz="America/Argentina/Buenos_Aires"),
+    start_date=pendulum.datetime(
+        2023, 6, 1, 1, 0, 0, tz="America/Argentina/Buenos_Aires"
+    ),
     max_active_runs=1,
 )
-def etl(database_string, url, bucket_name, month, year, file_name_xls, file_name_csv, sheet_name, database_type, database_name, database_host, database_user, database_password, database_driver):
+def etl(
+    database_string,
+    url,
+    bucket_name,
+    month,
+    year,
+    file_name_xls,
+    file_name_csv,
+    sheet_name,
+    database_type,
+    database_name,
+    database_host,
+    database_user,
+    database_password,
+    database_driver,
+):
     """
     Extract, transform and load inflation data into a database.
 
@@ -47,11 +80,25 @@ def etl(database_string, url, bucket_name, month, year, file_name_xls, file_name
 
     upload_r = extract(url, bucket_name, month, year, file_name_xls)
 
-    transform_r = transform(bucket_name, month, year, file_name_xls, file_name_csv, sheet_name)
-    
-    load_r = load(bucket_name, month, year, file_name_csv, database_type, database_name, database_host, database_user, database_password, database_driver)
-    
+    transform_r = transform(
+        bucket_name, month, year, file_name_xls, file_name_csv, sheet_name
+    )
+
+    load_r = load(
+        bucket_name,
+        month,
+        year,
+        file_name_csv,
+        database_type,
+        database_name,
+        database_host,
+        database_user,
+        database_password,
+        database_driver,
+    )
+
     upgrade_tables_r >> upload_r >> transform_r >> load_r
+
 
 database_string = DATABASE_STRING
 database_type = DATABASE_TYPE
@@ -69,4 +116,19 @@ year = YEAR
 sheet_name = SHEET_NAME
 
 
-etl(database_string, url, bucket_name, month, year, file_name_xls, file_name_csv, sheet_name, database_type, database_name, database_host, database_user, database_password, database_driver)
+etl(
+    database_string,
+    url,
+    bucket_name,
+    month,
+    year,
+    file_name_xls,
+    file_name_csv,
+    sheet_name,
+    database_type,
+    database_name,
+    database_host,
+    database_user,
+    database_password,
+    database_driver,
+)

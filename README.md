@@ -6,7 +6,7 @@ Este proyecto procesa un excel con datos de la inflación acumulada desde 2016, 
 
 Para orquestrar todo el proceso utilicé Airflow. Hay un único dag compuesto por cuatro tareas:
 
-1. upgrade_tables: usando alembic se actualiza el modelo de la tabla en la base de datos
+1. upgrade_tables: usando Alembic se actualiza el modelo de la tabla en la base de datos
 2. extract: se descarga el archivo Excel con los datos y se lo almacena en GCP
 3. transform: se descarga de GCP el archivo Excel, se lo transforma para que adopte un formato adecuado y se lo carga en GCP como csv
 4. load: se toma el archivo csv de GCP y se lo carga en la base de datos
@@ -22,30 +22,42 @@ Para crear el storage en GCP utilicé Terraform. El bucket se divide en subcarpe
 El proceso de tranformación de los datos es el siguiente:
 
 1. Se abre el excel con Pandas
-2. Se toma cada tabla de cada región de forma separada
-3. Se pivotean las fechas para que haya una única fila por fecha, categoría
-4. Se agrega una columna con la región
-5. Se concatenan todas las tablas
-6. Se rellenan los valores faltantes interpolando respetando la categoría y región
-7. Se testea que no haya valore nulos ni filas repetidas
+2. Se testea que cada subtabla de cada región cumpla con los patrones preestablecidos.
+3. Se toma cada tabla de cada región de forma separada
+4. Se pivotean las fechas para que haya una única fila por fecha, categoría
+5. Se agrega una columna con la región
+6. Se concatenan todas las tablas
+7. Se rellenan los valores faltantes interpolando respetando la categoría y región
+8. Se testea que no haya valore nulos ni filas repetidas
 
 Para correr crear y correr el stored procedure hay que entrar al contenedor del servidor de SQL Server y correr los siguientes comandos:
 
-1. /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password123! -i query.sql
-2. /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password123! -Q "USE ipc_database; EXECUTE interanual @Region='GBA'"
+    ```
+    /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password123! -i query.sql
+    /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password123! -Q "USE ipc_database; EXECUTE interanual @Region='GBA'"
+    ```
+
+El stored procedure se encuentra en ./scripts/docker_images/sql_server_image/query.sql
 
 ### Instrucciones
 
-en ./terraform
+En ./terraform
 
 1. En el directorio "../key_file/" guardar el archivo de credenciales de GCP con el nombre key_file.json
-2. Terrafrom init
-3. Terraform apply
+2. Crear la infraestructura en GCP:
 
-en ./
+    ```
+    terraform init
+    terraform apply --auto-approve
+    ```
 
-3. docker-compose up
+En ./
 
-en localhost:8080
+3. Crear las imágenes necesarias y levantar los contenedores para correr Airflow y la base de datos:
+    ```
+    docker-compose up --build
+    ```
+
+En el explorador entrar a localhost:8080
 
 4. Correr el dag

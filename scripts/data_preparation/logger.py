@@ -1,5 +1,6 @@
 import logging
 
+
 def get_logger(name, level="INFO"):
     """
     Function to get a Python logger. It can be used for different objects to share the same logger.

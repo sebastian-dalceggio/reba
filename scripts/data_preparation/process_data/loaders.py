@@ -1,6 +1,7 @@
 from google.cloud import storage
 from data_preparation.logger import get_logger
 
+
 def upload_to_gcp(bucket_name, month, year, file_name):
     """
     It takes a file with the name file_name from the tmp directory and uploads it to gcp storage.
@@ -28,10 +29,11 @@ def upload_to_gcp(bucket_name, month, year, file_name):
         logger.error(f"Exception: {e}")
         raise e
 
+
 def load_to_database(dataframe, table_model, client, index=False):
     """
     It loads a dataframe into a database.
-    
+
     Parameters
     ----------
     dataframe : Pandas dataframe
@@ -45,7 +47,9 @@ def load_to_database(dataframe, table_model, client, index=False):
     """
     logger = get_logger(load_to_database.__name__)
     try:
-        client.insert_dataframe(dataframe, table_model.__tablename__, if_exists="replace", index=index)
+        client.insert_dataframe(
+            dataframe, table_model.__tablename__, if_exists="replace", index=index
+        )
         number_of_rows = dataframe.shape[0]
         logger.info(f"{number_of_rows} records was loaded into the database")
     except Exception as e:
